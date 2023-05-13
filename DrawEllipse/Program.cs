@@ -1,7 +1,9 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using System.Diagnostics;
 using System.Numerics;
 using DrawEllipse;
+using DVec;
 using ImGuiNET;
 using ImGuiSDL2CS;
 using SDL2;
@@ -247,14 +249,71 @@ public class Program
         private float _eccentricy = 0.15f;
         private float _startAngle = 0;
         private float _endAngle = 1.57079632679f;
+        private int _numPoints = 64;
+        private long _profilet = 0;
+
+        private int _selectFuncIndex = 0;
+
+        private string[] _funcNames = new[]
+        {
+            "From Paper", 
+            "Using Matrix",
+            "Cheats Circle"
+        };
+        //private 
+        private Stopwatch _stopwatch = new Stopwatch();
+        private DVec.Vector2[] _points = new DVec.Vector2[64];
         public void UIControls()
         {
             if (ImGui.Begin("Ctrl"))
             {
-                ImGui.SliderAngle("Angle", ref _tiltAngle);
-                ImGui.SliderFloat("eccentricity", ref _eccentricy, 0, 1);
+                if (ImGui.Combo("Function:", ref _selectFuncIndex, _funcNames, _funcNames.Length))
+                {
+                    
+                }
+                
+                ImGui.SliderAngle("Tilt", ref _tiltAngle);
+                ImGui.SliderFloat("Eccentricity", ref _eccentricy, 0, 1);
                 ImGui.SliderAngle("StartAngle", ref _startAngle, -360, 360);
                 ImGui.SliderAngle("Sweep", ref _endAngle, -360, 360);
+                if (ImGui.Button("Profile 100000x"))
+                {
+                    
+                    _stopwatch.Restart();
+                    for (int i = 0; i < 100000; i++)
+                    {
+                        CallFunction(_selectFuncIndex);
+                    }
+                    _stopwatch.Stop();
+                    _profilet = _stopwatch.ElapsedMilliseconds;
+                }
+                ImGui.SameLine();
+                ImGui.Text(_profilet.ToString() + "ms");
+                CallFunction(_selectFuncIndex);
+            }
+        }
+
+        public void CallFunction(int func)
+        {
+            switch (func)
+            {
+                case 0:
+                {
+                    double b = 200 * Math.Sqrt(1 - _eccentricy * _eccentricy);
+                    _points = Stuff.EllipseArrayFromPaper(200, b, _tiltAngle, 64);
+                }
+                 break;
+                case 1:
+                {
+                    _points = Stuff.EllipseFullMtxSweep(200, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
+                }
+                    break;
+                case 2:
+                {
+                    _points = Stuff.CheatsCircle(200, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
+                }
+                    break;
+                    
             }
         }
 
@@ -266,13 +325,10 @@ public class Program
             byte alph = 255;
             
             SDL.SDL_SetRenderDrawColor(rendererPtr, red, grn, blu, alph);
-            //SDL.SDL_RenderDrawLine(rendererPtr, 0, 0, 256, 256);
-            //var tpls = Stuff.EllipseArrayFromPaper(100, 200, _tiltAngle, 64 );
-            //var tpls = Stuff.EllipsArrayPaper1(200, _eccentricy, _tiltAngle, _startAngle, _endAngle ,64 );
-            var tpls = Stuff.EllipseFullMtxSweep(200, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
+
             var cx = (int) _state.MainWinSize.X / 2;
             var cy = (int) _state.MainWinSize.Y / 2;
-            foreach (var tpl in tpls)
+            foreach (var tpl in _points)
             {
                 SDL.SDL_RenderDrawPoint(rendererPtr, (int)(cx + tpl.X), (int)(cy + tpl.Y));
             }
