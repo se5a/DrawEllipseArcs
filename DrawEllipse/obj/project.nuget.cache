@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "v3/SgNwXMs5flruXRs4VPko9vzByKd/qX86Nwt/ZFxyNYWN6AHbuWtABqctwMAS7dMHyMfDtuh1pCMC+gUbeOg==",
+  "success": true,
+  "projectFilePath": "/mnt/98448323-4372-4c8a-904a-30b587cc3685/Programing/DrawEllipse/DrawEllipse/DrawEllipse.csproj",
+  "expectedPackageFiles": [
+    "/home/se5a/.nuget/packages/imgui.net/1.89.4/imgui.net.1.89.4.nupkg.sha512",
+    "/home/se5a/.nuget/packages/system.buffers/4.4.0/system.buffers.4.4.0.nupkg.sha512",
+    "/home/se5a/.nuget/packages/system.numerics.vectors/4.4.0/system.numerics.vectors.4.4.0.nupkg.sha512",
+    "/home/se5a/.nuget/packages/system.runtime.compilerservices.unsafe/4.4.0/system.runtime.compilerservices.unsafe.4.4.0.nupkg.sha512"
+  ],
+  "logs": []
+}
