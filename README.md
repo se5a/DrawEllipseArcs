@@ -14,6 +14,10 @@ Stuff.cs has a bunch of working, non working and half working functions of diffe
 I'm using a hand rolled matrix class and and hand rolled vector class to give me vectors with doubles 
 (this was due to the origional requirement needing to work in solar system meter scales). 
 
+can now select from a list of functions and profile them. 
+
 uses SDL2 to draw the points and dear imgui.net for the interface controls,  
 this part of the code is a little messy as I was attempting to get something together to display stuff quickly so it's copypastad from another project without a lot of care. 
 should work on windows or linux. 
+
+![screeny](https://github.com/se5a/DrawEllipseArcs/blob/master/DrawEllipse/DrawingEllipses.png?raw=true)
