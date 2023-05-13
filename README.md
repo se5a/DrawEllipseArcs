@@ -16,3 +16,4 @@ I'm using a hand rolled matrix class and and hand rolled vector class to give me
 
 uses SDL2 to draw the points and dear imgui.net for the interface controls,  
 this part of the code is a little messy as I was attempting to get something together to display stuff quickly so it's copypastad from another project without a lot of care. 
+should work on windows or linux. 
