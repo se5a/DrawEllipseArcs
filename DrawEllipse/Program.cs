@@ -38,7 +38,7 @@ public class Program
         private GlobalUIState _state;
 
         public MainWindow()
-            : base("Test App")
+            : base("Draw Ellipse")
         {
 
             _state = new GlobalUIState(this);
@@ -247,6 +247,8 @@ public class Program
 
         private float _tiltAngle = 0;
         private float _eccentricy = 0.15f;
+        private double _semiMajor = 200;
+        private double _semiMinor = 200 * Math.Sqrt(1 - 0.15f * 0.15f);
         private float _startAngle = 0;
         private float _endAngle = 1.57079632679f;
         private int _numPoints = 64;
@@ -258,7 +260,9 @@ public class Program
         {
             "From Paper", 
             "Using Matrix",
-            "Cheats Circle"
+            "Matrix AntiClockwise",
+            "Cheats Circle",
+            "Cheats Circle AntiCockwise"
         };
         //private 
         private Stopwatch _stopwatch = new Stopwatch();
@@ -273,7 +277,10 @@ public class Program
                 }
                 
                 ImGui.SliderAngle("Tilt", ref _tiltAngle);
-                ImGui.SliderFloat("Eccentricity", ref _eccentricy, 0, 1);
+                if(ImGui.SliderFloat("Eccentricity", ref _eccentricy, 0, 1))
+                {
+                    _semiMinor = _semiMajor * Math.Sqrt(1 - _eccentricy * _eccentricy);
+                }
                 ImGui.SliderAngle("StartAngle", ref _startAngle, -360, 360);
                 ImGui.SliderAngle("Sweep", ref _endAngle, -360, 360);
                 if (ImGui.Button("Profile 100000x"))
@@ -299,18 +306,27 @@ public class Program
             {
                 case 0:
                 {
-                    double b = 200 * Math.Sqrt(1 - _eccentricy * _eccentricy);
-                    _points = Stuff.EllipseArrayFromPaper(200, b, _tiltAngle, 64);
+                    _points = Stuff.EllipseArrayFromPaper(_semiMajor, _semiMinor, _tiltAngle, 64);
                 }
                  break;
                 case 1:
                 {
-                    _points = Stuff.EllipseFullMtxSweep(200, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
+                    _points = Stuff.EllipseFullMtxSweep(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
                 }
                     break;
                 case 2:
                 {
-                    _points = Stuff.CheatsCircle(200, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
+                    _points = Stuff.EllipseFullMtxSweepAntiCockwise(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
+                }
+                    break;
+                case 3:
+                {
+                    _points = Stuff.CheatsCircle(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
+                }
+                    break;
+                case 4:
+                {
+                    _points = Stuff.CheatsCircleAntiClockwise(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
                 }
                     break;
                     

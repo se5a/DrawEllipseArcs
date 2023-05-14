@@ -43,6 +43,14 @@ public class Stuff
     }
 
 
+    /// <summary>
+    /// This is a C# translation of the formula found in this paper: https://academic.oup.com/comjnl/article/14/1/81/356378
+    /// </summary>
+    /// <param name="semiMaj"></param>
+    /// <param name="semiMin"></param>
+    /// <param name="tilt"></param>
+    /// <param name="numPoints"></param>
+    /// <returns></returns>
     public static DVec.Vector2[] EllipseArrayFromPaper(double semiMaj, double semiMin, double tilt, int numPoints)
     {
         DVec.Vector2[] points = new DVec.Vector2[numPoints];
@@ -81,44 +89,14 @@ public class Stuff
         return points;
     }
     
-    public static (int x, int y)[] EllipseArrayFromPaper2(double semiMaj, double semiMin, double tilt, int numPoints)
-    {
-        (int x, int y)[] points = new (int x, int y)[numPoints];
-
-        var n = numPoints;
-        var a = semiMaj;
-        var b = semiMin;
-        var xc = 0; //this is the center position of the ellipse;
-        var yc = 0;
-        
-        var deltaPhi = 2 * Math.PI / (n - 1);
-        var ct = Math.Cos(tilt);
-        var st = Math.Sin(tilt);
-        var cdp = Math.Cos(deltaPhi);
-        var sdp = Math.Sin(deltaPhi);
-
-        var alpha = cdp + sdp * st * ct * (a / b - b / a);
-        var bravo = - sdp * ( (b * st) * (b * st) + (a * ct) * (a * ct)) / (a * b);
-        var charli = sdp * ( (b * ct) * (b * ct) + (a * st) * (a * st)) / (a * b);
-        var delta = cdp + sdp * st * ct * (b / a - a / b);
-        delta = delta - (charli * bravo) / alpha;
-        charli = charli / alpha;
-
-        var x = a * ct;
-        var y = a * st;
-
-        for (int i = 0; i < numPoints; i++)
-        {
-            var xn = xc + x;
-            var yn = yc + y;
-            points[i] = ((int)xn, (int)yn);
-            x = alpha * x + bravo * y;
-            y = charli * x + delta * y;
-        }
-        
-        return points;
-    }
-    
+    /// <summary>
+    /// this was a translation of the paper but removing tilt,
+    /// as an attempt to get a better understanding of what the paper was doing. 
+    /// </summary>
+    /// <param name="semiMaj"></param>
+    /// <param name="semiMin"></param>
+    /// <param name="numPoints"></param>
+    /// <returns></returns>
     public static (int x, int y)[] EllipseArraySimple(double semiMaj, double semiMin, int numPoints)
     {
         (int x, int y)[] points = new (int x, int y)[numPoints];
@@ -155,6 +133,54 @@ public class Stuff
         return points;
     }
     
+    /// <summary>
+    /// The paper has an un-optomised version of the function. this is it. 
+    /// </summary>
+    /// <param name="semiMaj"></param>
+    /// <param name="eccentricity"></param>
+    /// <param name="tilt"></param>
+    /// <param name="numPoints"></param>
+    /// <returns></returns>
+    public static DVec.Vector2[] EllipsArrayPaperUnOptomised(double semiMaj, double eccentricity, double tilt, int numPoints)
+    {
+        DVec.Vector2[] points = new DVec.Vector2[numPoints];
+        double deltaPhi = 2 * Math.PI / (numPoints - 1);
+        double ct = Math.Cos(tilt);
+        double st = Math.Sin(tilt);
+        double cdp = Math.Cos(deltaPhi);
+        double sdp = Math.Sin(deltaPhi);
+        double cndp = 1.0;
+        double sndp = 0;
+        double a = semiMaj;
+        double b = semiMaj * Math.Sqrt(1 - eccentricity * eccentricity);
+        double xc = 0;
+        double yc = 0;
+        
+        for (int i = 0; i < numPoints; i++)
+        {
+            double x = a * cndp;
+            double y = b * sndp;
+
+            double xi = xc + x * ct - y * st;
+            double yi = yc + x * st + y * ct;
+            points[i] = new DVec.Vector2(xi, yi);
+
+            double temp = cndp * cdp - sndp * sdp;
+            sndp = sndp * cdp + cndp * sdp;
+            cndp = temp;
+        }
+
+        return points;
+    }  
+    
+    /// <summary>
+    /// paper version but uses matrix to only move so we're centered around the focal point. 
+    /// </summary>
+    /// <param name="semiMaj"></param>
+    /// <param name="eccentricity"></param>
+    /// <param name="tilt"></param>
+    /// <param name="numPoints"></param>
+    /// <returns></returns>
     public static DVec.Vector2[] EllipseArrayMTX(double semiMaj, double eccentricity, double tilt, int numPoints)
     {
         DVec.Vector2[] points = new DVec.Vector2[numPoints];
@@ -196,38 +222,19 @@ public class Stuff
         return pnts;
     }
     
-    public static DVec.Vector2[] EllipsArrayPaper1(double semiMaj, double eccentricity, double tilt, double start, double end, int numPoints)
-    {
-        DVec.Vector2[] points = new DVec.Vector2[numPoints];
-        double deltaPhi = 2 * Math.PI / (numPoints - 1);
-        double ct = Math.Cos(tilt);
-        double st = Math.Sin(tilt);
-        double cdp = Math.Cos(deltaPhi);
-        double sdp = Math.Sin(deltaPhi);
-        double cndp = 1.0;
-        double sndp = 0;
-        double a = semiMaj;
-        double b = semiMaj * Math.Sqrt(1 - eccentricity * eccentricity);
-        double xc = 0;
-        double yc = 0;
-        
-        for (int i = 0; i < numPoints; i++)
-        {
-            double x = a * cndp;
-            double y = b * sndp;
 
-            double xi = xc + x * ct - y * st;
-            double yi = yc + x * st + y * ct;
-            points[i] = new DVec.Vector2(xi, yi);
 
-            double temp = cndp * cdp - sndp * sdp;
-            sndp = sndp * cdp + cndp * sdp;
-            cndp = temp;
-        }
-
-        return points;
-    }
-
+    /// <summary>
+    /// this was an unfinished attempt at trying to get point positions simular to the paper by doing the angles
+    /// from the focal points, and switching focal points half way through. 
+    /// </summary>
+    /// <param name="semiMaj"></param>
+    /// <param name="eccentricity"></param>
+    /// <param name="tilt"></param>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <param name="numPoints"></param>
+    /// <returns></returns>
     public static DVec.Vector2[] EllipseFocalPolar(double semiMaj, double eccentricity, double tilt, double start,
         double end, int numPoints)
     {
@@ -273,44 +280,16 @@ public class Stuff
         return points;
     }
 
-    public static DVec.Vector2[] EllipseFullMtx(double semiMaj, double eccentricity, double tilt, double start,
-        double end, int numPoints)
-    {
-        double b = semiMaj * Math.Sqrt(1 - eccentricity * eccentricity);
-        start = Math.Atan(semiMaj / b * Math.Tan(start));
-        end = Math.Atan(semiMaj / b * Math.Tan(end));
-        
-        double Δθ = 2 * Math.PI / (numPoints - 1);
-        var sweep = end - start;
-        numPoints = (int)Math.Abs(sweep / Δθ);
-        DVec.Vector2[] points = new DVec.Vector2[numPoints + 1];
-        double θ = 0;
-        double x = 0;
-        double y = 0;
-        
-        double linEcc = Math.Sqrt(semiMaj * semiMaj - b * b);
-        
-        for (int i = 0; i < numPoints; i++)
-        {
-            θ = start + Δθ * i;
-            x = semiMaj * Math.Cos(θ);
-            y = semiMaj * Math.Sin(θ);
-
-            points[i] = new DVec.Vector2(x, y);
-        }
-        x = semiMaj * Math.Cos(end);
-        y = semiMaj * Math.Sin(end);
-        points[numPoints] = new DVec.Vector2(x, y);
-
-        var scalemtx = Matrix.IDScale(1, eccentricity);
-        var moveMtx = Matrix.IDTranslate(linEcc, 0);
-        var rotMtx = Matrix.IDRotate(tilt);
-        var endMtx = scalemtx * moveMtx * rotMtx;
-        points = endMtx.Transform(points);
-        
-        return points;
-    }
-    
+    /// <summary>
+    /// Uses Matrix transforms on a circle to change the eccentricity to an ellipse. 
+    /// </summary>
+    /// <param name="semiMaj"></param>
+    /// <param name="eccentricity"></param>
+    /// <param name="tilt"></param>
+    /// <param name="start"></param>
+    /// <param name="sweep"></param>
+    /// <param name="numPoints"></param>
+    /// <returns></returns>
     public static DVec.Vector2[] EllipseFullMtxSweep(double semiMaj, double eccentricity, double tilt, double start,
         double sweep, int numPoints)
     {
@@ -350,6 +329,64 @@ public class Stuff
         return points;
     }
 
+    /// <summary>
+    /// Uses Matrix transforms on a circle to change the eccentricity to an ellipse. 
+    /// </summary>
+    /// <param name="semiMaj"></param>
+    /// <param name="eccentricity"></param>
+    /// <param name="tilt"></param>
+    /// <param name="start"></param>
+    /// <param name="sweep"></param>
+    /// <param name="numPoints"></param>
+    /// <returns></returns>
+    public static DVec.Vector2[] EllipseFullMtxSweepAntiCockwise(double semiMaj, double eccentricity, double tilt, double start,
+        double sweep, int numPoints)
+    {
+        
+        //convert ellipse angles to circle angles. 
+        double b = semiMaj * Math.Sqrt(1 - eccentricity * eccentricity);
+        //start = Math.Atan2(b * Math.Cos(start), semiMaj * Math.Sin(start));
+        //sweep = Math.Atan2(b * Math.Cos(sweep), semiMaj * Math.Sin(sweep));
+        double end = start + sweep;
+        double Δθ = 2 * Math.PI / (numPoints - 1) * Math.Sign(sweep); //arc increment for a whole circle
+        numPoints = (int)Math.Abs(sweep / Δθ); //numpoints for just the arc
+        DVec.Vector2[] points = new DVec.Vector2[numPoints + 1];
+        
+        double linEcc = Math.Sqrt(semiMaj * semiMaj - b * b);
+        double θ = 0;
+        double x = 0;
+        double y = 0;
+        
+        for (int i = 0; i < numPoints; i++)
+        {
+            θ = -start - Δθ * i;
+            x = semiMaj * Math.Cos(θ);
+            y = semiMaj * Math.Sin(θ);
+            points[i] = new DVec.Vector2(x, y);
+        }
+        x = semiMaj * Math.Cos(-end);
+        y = semiMaj * Math.Sin(-end);
+        points[numPoints] = new DVec.Vector2(x, y);
+        
+        Matrix scalemtx = Matrix.IDScale(1,  1 - eccentricity);
+        Matrix moveMtx = Matrix.IDTranslate(-linEcc, 0);
+        Matrix rotMtx = Matrix.IDRotate(tilt);
+        Matrix endMtx = moveMtx * scalemtx * rotMtx;
+        points = endMtx.Transform(points);
+        
+        return points;
+    }
+
+    /// <summary>
+    /// Uses a cheat way to position points for the circle, faster than using trig but not accurate? 
+    /// </summary>
+    /// <param name="semiMaj"></param>
+    /// <param name="eccentricity"></param>
+    /// <param name="tilt"></param>
+    /// <param name="start"></param>
+    /// <param name="sweep"></param>
+    /// <param name="numPoints"></param>
+    /// <returns></returns>
     public static DVec.Vector2[] CheatsCircle(double semiMaj, double eccentricity, double tilt, double start,
         double sweep, int numPoints)
     {
@@ -377,8 +414,7 @@ public class Stuff
         x = semiMaj * Math.Cos(end);
         y = semiMaj * Math.Sin(end);
         points[numPoints] = new DVec.Vector2(x, y);
-
-        Matrix mirMtx = Matrix.IDMirror(true, false);
+        
         Matrix scalemtx = Matrix.IDScale(1,  1 - eccentricity);
         Matrix moveMtx = Matrix.IDTranslate(-linEcc, 0);
         Matrix rotMtx = Matrix.IDRotate(tilt);
@@ -388,5 +424,40 @@ public class Stuff
         return points;
     }
 
-    
+    public static DVec.Vector2[] CheatsCircleAntiClockwise(double semiMaj, double eccentricity, double tilt, double start,
+        double sweep, int numPoints)
+    {
+        
+        //convert ellipse angles to circle angles. 
+        double b = semiMaj * Math.Sqrt(1 - eccentricity * eccentricity);
+        //start = Math.Atan2(b * Math.Cos(start), semiMaj * Math.Sin(start));
+        //sweep = Math.Atan2(b * Math.Cos(sweep), semiMaj * Math.Sin(sweep));
+        double end = start + sweep;
+        double Δθ = 2 * Math.PI / (numPoints - 1) * Math.Sign(sweep); //arc increment for a whole circle
+        numPoints = (int)Math.Abs(sweep / Δθ); //numpoints for just the arc
+        DVec.Vector2[] points = new DVec.Vector2[numPoints + 1];
+        
+        double linEcc = Math.Sqrt(semiMaj * semiMaj - b * b);
+        double θ = 0;
+        double x = semiMaj * Math.Cos(-start);
+        double y = semiMaj * Math.Sin(-start);
+        
+        for (int i = 0; i < numPoints; i++)
+        {
+            x += Δθ * y;
+            y -= Δθ * x;
+            points[i] = new DVec.Vector2(x, y);
+        }
+        x = semiMaj * Math.Cos(-end);
+        y = semiMaj * Math.Sin(-end);
+        points[numPoints] = new DVec.Vector2(x, y);
+        
+        Matrix scalemtx = Matrix.IDScale(1,  1 - eccentricity);
+        Matrix moveMtx = Matrix.IDTranslate(-linEcc, 0);
+        Matrix rotMtx = Matrix.IDRotate(tilt);
+        Matrix endMtx = moveMtx * scalemtx * rotMtx;
+        points = endMtx.Transform(points);
+        
+        return points;
+    }
 }
