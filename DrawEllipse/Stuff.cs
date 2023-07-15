@@ -1,6 +1,7 @@
 using System.Numerics;
 using DVec;
 using Pulsar4X.SDL2UI;
+using Vector2 = DVec.Vector2;
 
 namespace DrawEllipse;
 
@@ -450,6 +451,108 @@ public class Stuff
         }
         x = semiMaj * Math.Cos(-end);
         y = semiMaj * Math.Sin(-end);
+        points[numPoints] = new DVec.Vector2(x, y);
+        
+        Matrix scalemtx = Matrix.IDScale(1,  1 - eccentricity);
+        Matrix moveMtx = Matrix.IDTranslate(-linEcc, 0);
+        Matrix rotMtx = Matrix.IDRotate(tilt);
+        Matrix endMtx = moveMtx * scalemtx * rotMtx;
+        points = endMtx.Transform(points);
+        
+        return points;
+    }
+    
+    public static DVec.Vector2[] ArcWithFocalAngle(double semiMaj, double eccentricity, double tilt, double start,
+        double sweep, int numPoints)
+    {
+        double θ = 0;
+        double x = 0;
+        double y = 0;
+        //convert ellipse angles to circle angles. 
+        double b = semiMaj * Math.Sqrt(1 - eccentricity * eccentricity);
+        double linEcc = Math.Sqrt(semiMaj * semiMaj - b * b);
+        
+        //convert focal angle to center angle
+        x = linEcc * Math.Cos(-start);
+        y = linEcc * Math.Sin(-start);
+        //shift y from ellipse to circle:
+        y = y * -(1 - eccentricity);
+        start = Math.Atan2(y, x);
+        
+        //convert focal angle to center angle
+        x = linEcc * Math.Cos(-sweep);
+        y = linEcc * Math.Sin(-sweep);
+        //shift y from ellipse to circle:
+        y = y * -(1 - eccentricity);
+        sweep = Math.Atan2(y, x);
+        
+        
+        
+        double end = start + sweep;
+        
+        double Δθ = 2 * Math.PI / (numPoints - 1) * Math.Sign(sweep); //arc increment for a whole circle
+        numPoints = (int)Math.Abs(sweep / Δθ); //numpoints for just the arc
+        DVec.Vector2[] points = new DVec.Vector2[numPoints + 1];
+        
+        
+
+        
+        for (int i = 0; i < numPoints; i++)
+        {
+            θ = -start - Δθ * i;
+            x = semiMaj * Math.Cos(θ);
+            y = semiMaj * Math.Sin(θ);
+            points[i] = new DVec.Vector2(x, y);
+        }
+        x = semiMaj * Math.Cos(-end);
+        y = semiMaj * Math.Sin(-end);
+        points[numPoints] = new DVec.Vector2(x, y);
+        
+        Matrix scalemtx = Matrix.IDScale(1,  1 - eccentricity);
+        Matrix moveMtx = Matrix.IDTranslate(-linEcc, 0);
+        Matrix rotMtx = Matrix.IDRotate(tilt);
+        Matrix endMtx = moveMtx * scalemtx * rotMtx;
+        points = endMtx.Transform(points);
+        
+        return points;
+    }
+    
+    public static Vector2[] ArcWithFocalAngle(double semiMaj, double eccentricity, double tilt, Vector2 start,
+        Vector2 end, int numPoints)
+    {
+        double θ = 0;
+        double x = 0;
+        double y = 0;
+        //convert ellipse angles to circle angles. 
+        double b = semiMaj * Math.Sqrt(1 - eccentricity * eccentricity);
+        double linEcc = Math.Sqrt(semiMaj * semiMaj - b * b);
+        
+        //convert focal angle to center angle
+        x = start.X + linEcc;
+        y = start.Y * -(1 - eccentricity);//shift y from ellipse to circle
+
+        double startAng = Math.Atan2(y, x);
+        
+        //convert focal angle to center angle
+        x = end.X + linEcc;
+        y = end.Y * -(1 - eccentricity);//shift y from ellipse to circle
+
+        double endAng = Math.Atan2(y, x);
+        double sweep = endAng - startAng;
+        
+        double Δθ = 2 * Math.PI / (numPoints - 1) * Math.Sign(sweep); //arc increment for a whole circle
+        numPoints = (int)Math.Abs(sweep / Δθ); //numpoints for just the arc
+        Vector2[] points = new Vector2[numPoints + 1];
+        
+        for (int i = 0; i < numPoints; i++)
+        {
+            θ = -startAng - Δθ * i;
+            x = semiMaj * Math.Cos(θ);
+            y = semiMaj * Math.Sin(θ);
+            points[i] = new DVec.Vector2(x, y);
+        }
+        x = semiMaj * Math.Cos(-endAng);
+        y = semiMaj * Math.Sin(-endAng);
         points[numPoints] = new DVec.Vector2(x, y);
         
         Matrix scalemtx = Matrix.IDScale(1,  1 - eccentricity);

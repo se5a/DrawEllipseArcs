@@ -1,12 +1,14 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Numerics;
 using DrawEllipse;
 using DVec;
 using ImGuiNET;
 using ImGuiSDL2CS;
 using SDL2;
+using Vector2 = DVec.Vector2;
 
 public class Program
 {
@@ -250,9 +252,14 @@ public class Program
         private double _semiMajor = 200;
         private double _semiMinor = 200 * Math.Sqrt(1 - 0.15f * 0.15f);
         private float _startAngle = 0;
-        private float _endAngle = 1.57079632679f;
-        private int _numPoints = 64;
+        private float _sweepAngle = 1.57079632679f;
+        private Vector2 _startPos = new Vector2();
+        private Vector2 _endPos = new Vector2();
+        private int _numPoints = 60;
         private long _profilet = 0;
+
+        private SDL.SDL_Point[] _angleLines = new SDL.SDL_Point[3]
+            { new SDL.SDL_Point(), new SDL.SDL_Point(), new SDL.SDL_Point() };
 
         private int _selectFuncIndex = 0;
 
@@ -262,11 +269,15 @@ public class Program
             "Using Matrix",
             "Matrix AntiClockwise",
             "Cheats Circle",
-            "Cheats Circle AntiCockwise"
+            "Cheats Circle AntiCockwise",
+            "AnglesFromFocal",
+            "Using Positions"
         };
+
+        private string _errorMsg = "";
         //private 
         private Stopwatch _stopwatch = new Stopwatch();
-        private DVec.Vector2[] _points = new DVec.Vector2[64];
+        private DVec.Vector2[] _points = new DVec.Vector2[60];
         public void UIControls()
         {
             if (ImGui.Begin("Ctrl"))
@@ -277,12 +288,47 @@ public class Program
                 }
                 
                 ImGui.SliderAngle("Tilt", ref _tiltAngle);
-                if(ImGui.SliderFloat("Eccentricity", ref _eccentricy, 0, 1))
+                if(ImGui.SliderFloat("Eccentricity", ref _eccentricy, 0, 2))
                 {
                     _semiMinor = _semiMajor * Math.Sqrt(1 - _eccentricy * _eccentricy);
+                    double linEcc = Math.Sqrt(_semiMajor * _semiMajor - _semiMinor * _semiMinor);
+                    _angleLines[1] = new SDL.SDL_Point()
+                    {
+                        //x = (int)(-linEcc * Math.Cos(-_tiltAngle)),
+                        //y = (int)(-linEcc * Math.Sin(-_tiltAngle))
+                        x = 0,
+                        y = 0
+                    };
                 }
-                ImGui.SliderAngle("StartAngle", ref _startAngle, -360, 360);
-                ImGui.SliderAngle("Sweep", ref _endAngle, -360, 360);
+
+                if (ImGui.SliderAngle("StartAngle", ref _startAngle, -360, 360))
+                {
+
+                    var r = RadiusFromFocal(_semiMajor, _eccentricy, _tiltAngle, _startAngle);
+                    _startPos.X = r * Math.Cos(-_startAngle);
+                    _startPos.Y = r * Math.Sin(-_startAngle);
+                    _angleLines[0] = new SDL.SDL_Point()
+                    {
+                        x = (int)_startPos.X,
+                        y = (int)_startPos.Y
+                    };
+                    
+                }
+
+                if (ImGui.SliderAngle("Sweep", ref _sweepAngle, -360, 360))
+                {
+                    double endAng = _startAngle + _sweepAngle;
+                    var r = RadiusFromFocal(_semiMajor, _eccentricy, _tiltAngle, endAng);
+                    
+                    _endPos.X = r * Math.Cos(-endAng);
+                    _endPos.Y = r * Math.Sin(-endAng);
+                    _angleLines[2] = new SDL.SDL_Point()
+                    {
+                        x = (int)_endPos.X,
+                        y = (int)_endPos.Y
+                    };
+                    
+                }
                 if (ImGui.Button("Profile 100000x"))
                 {
                     
@@ -297,39 +343,62 @@ public class Program
                 ImGui.SameLine();
                 ImGui.Text(_profilet.ToString() + "ms");
                 CallFunction(_selectFuncIndex);
+                
+                ImGui.Text(_errorMsg);
             }
         }
 
         public void CallFunction(int func)
         {
-            switch (func)
+            try
             {
-                case 0:
+                switch (func)
                 {
-                    _points = Stuff.EllipseArrayFromPaper(_semiMajor, _semiMinor, _tiltAngle, 64);
+                    case 0:
+                    {
+                        _points = Stuff.EllipseArrayFromPaper(_semiMajor, _semiMinor, _tiltAngle, 64);
+                    }
+                        break;
+                    case 1:
+                    {
+                        _points = Stuff.EllipseFullMtxSweep(_semiMajor, _eccentricy, _tiltAngle, _startAngle,
+                            _sweepAngle, 64);
+                    }
+                        break;
+                    case 2:
+                    {
+                        _points = Stuff.EllipseFullMtxSweepAntiCockwise(_semiMajor, _eccentricy, _tiltAngle,
+                            _startAngle, _sweepAngle, 64);
+                    }
+                        break;
+                    case 3:
+                    {
+                        _points = Stuff.CheatsCircle(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _sweepAngle, 64);
+                    }
+                        break;
+                    case 4:
+                    {
+                        _points = Stuff.CheatsCircleAntiClockwise(_semiMajor, _eccentricy, _tiltAngle, _startAngle,
+                            _sweepAngle, 64);
+                    }
+                        break;
+                    case 5:
+                    {
+                        _points = Stuff.ArcWithFocalAngle(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _sweepAngle,
+                            64);
+                    }
+                        break;
+                    case 6:
+                    {
+                        _points = Stuff.ArcWithFocalAngle(_semiMajor, _eccentricy, _tiltAngle, _startPos, _endPos, 64);
+                    }
+                        break;
                 }
-                 break;
-                case 1:
-                {
-                    _points = Stuff.EllipseFullMtxSweep(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
-                }
-                    break;
-                case 2:
-                {
-                    _points = Stuff.EllipseFullMtxSweepAntiCockwise(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
-                }
-                    break;
-                case 3:
-                {
-                    _points = Stuff.CheatsCircle(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
-                }
-                    break;
-                case 4:
-                {
-                    _points = Stuff.CheatsCircleAntiClockwise(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _endAngle, 64);
-                }
-                    break;
-                    
+                _errorMsg = "";
+            }
+            catch(Exception e)
+            {
+                _errorMsg = "This Function doesn't handle the given input:\n" + e.Message;
             }
         }
 
@@ -348,6 +417,26 @@ public class Program
             {
                 SDL.SDL_RenderDrawPoint(rendererPtr, (int)(cx + tpl.X), (int)(cy + tpl.Y));
             }
+            
+            
+            red = 100;
+            grn = 0;
+            blu = 0;
+            alph = 25;
+            SDL.SDL_SetRenderDrawColor(rendererPtr, red, grn, blu, alph);
+            var point0 = new SDL.SDL_Point(){
+                x = _angleLines[0].x + cx, 
+                y = _angleLines[0].y + cy
+            };
+            for (int i = 1; i < _angleLines.Length; i++)
+            {
+                var point1 = new SDL.SDL_Point(){
+                    x = _angleLines[i].x + cx, 
+                    y = _angleLines[i].y + cy
+                };
+                SDL.SDL_RenderDrawLine(rendererPtr, point0.x, point0.y, point1.x, point1.y);
+                point0 = point1;
+            }
         }
     }
 
@@ -358,4 +447,19 @@ public class Program
         Middle
     }
     
+    /// <summary>
+    /// https://en.wikipedia.org/wiki/Ellipse#Polar_form_relative_to_focus
+    /// </summary>
+    /// <param name="a">semi major</param>
+    /// <param name="e">eccentricy</param>
+    /// <param name="phi">angle from focal 1 to focal 2 (or center)</param>
+    /// <param name="theta">angle</param>
+    /// <returns></returns>
+    public static double RadiusFromFocal(double a, double e, double phi, double theta)
+    {
+        double dividend = a * (1 - e * e);
+        double divisor = 1 - e * Math.Cos(theta - phi);
+        double quotent = dividend / divisor;
+        return quotent;
+    }
 }
