@@ -5,7 +5,7 @@ using Vector2 = DVec.Vector2;
 
 namespace DrawEllipse;
 
-public class Stuff
+public class EllipseFormula
 {
     public static (int x, int y)[] EllipseArray(float semiMajorAxis, float semiMinorAxis, float startAngle, float endAngle, int numPoints)
     {
@@ -562,5 +562,51 @@ public class Stuff
         points = endMtx.Transform(points);
         
         return points;
+    }
+
+
+    /// <summary>
+    /// Positions done using normal trig. 
+    /// </summary>
+    /// <param name="semiMaj"></param>
+    /// <param name="eccentricity"></param>
+    /// <param name="tilt"></param>
+    /// <param name="start"></param>
+    /// <param name="sweep"></param>
+    /// <param name="numPoints"></param>
+    /// <returns></returns>
+    public static Vector2[] ArcTrig(double semiMaj, double eccentricity, double tilt, double start, double sweep,
+        int numPoints)
+    {                    
+        var _semiMinor = semiMaj * Math.Sqrt(1 - eccentricity * eccentricity);
+        double linEcc = Math.Sqrt(semiMaj * semiMaj - _semiMinor * _semiMinor);
+        
+        double θ = 0;
+        double x = 0;
+        double y = 0;
+        
+        double Δθ = 2 * Math.PI / (numPoints - 1) * Math.Sign(sweep); 
+        numPoints = (int)Math.Abs(sweep / Δθ) + 1; //numpoints for just the arc
+        
+        Vector2[] points = new Vector2[numPoints + 1];
+        for (int i = 0; i < numPoints; i++)
+        {
+            θ = -start - Δθ * i;
+            x = semiMaj * Math.Cos(θ);
+            y = semiMaj * Math.Sin(θ);
+            points[i] = new Vector2(x, y);
+        }
+        //lastPoint:
+        θ = -start - sweep;
+        points[^1] = new Vector2()
+        {
+            X = semiMaj * Math.Cos(θ),
+            Y = semiMaj * Math.Sin(θ)
+        };
+
+        return points;
+
+
+
     }
 }
