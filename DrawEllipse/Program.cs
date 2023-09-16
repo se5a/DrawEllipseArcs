@@ -255,10 +255,16 @@ public class Program
         private float _sweepAngle = 1.57079632679f;
         private Vector2 _startPos = new Vector2();
         private Vector2 _endPos = new Vector2();
+        private Vector2 _focalPoint = new Vector2(0, 0);
+        private Vector2 _ctrPoint = new Vector2();
+        private double _linEcc = 0;
         private int _numPoints = 60;
         private long _profilet = 0;
 
-        private SDL.SDL_Point[] _angleLines = new SDL.SDL_Point[3]
+        private SDL.SDL_Point[] _angleLinesFcl = new SDL.SDL_Point[3]
+            { new SDL.SDL_Point(), new SDL.SDL_Point(), new SDL.SDL_Point() };
+        
+        private SDL.SDL_Point[] _angleLinesCtr = new SDL.SDL_Point[3]
             { new SDL.SDL_Point(), new SDL.SDL_Point(), new SDL.SDL_Point() };
 
         private int _selectFuncIndex = 0;
@@ -287,19 +293,24 @@ public class Program
                 {
                     
                 }
+
+                if (ImGui.SliderAngle("Tilt", ref _tiltAngle))
+                {
+                    TiltAngle();
+                }
                 
-                ImGui.SliderAngle("Tilt", ref _tiltAngle);
                 if(ImGui.SliderFloat("Eccentricity", ref _eccentricy, 0, 2))
                 {
                     _semiMinor = _semiMajor * Math.Sqrt(1 - _eccentricy * _eccentricy);
-                    double linEcc = Math.Sqrt(_semiMajor * _semiMajor - _semiMinor * _semiMinor);
-                    _angleLines[1] = new SDL.SDL_Point()
+                    _linEcc = Math.Sqrt(_semiMajor * _semiMajor - _semiMinor * _semiMinor);
+                    _angleLinesFcl[1] = new SDL.SDL_Point()
                     {
                         //x = (int)(-linEcc * Math.Cos(-_tiltAngle)),
                         //y = (int)(-linEcc * Math.Sin(-_tiltAngle))
                         x = 0,
                         y = 0
                     };
+                    TiltAngle();
                 }
 
                 if (ImGui.SliderAngle("StartAngle", ref _startAngle, -360, 360))
@@ -330,16 +341,32 @@ public class Program
             }
         }
 
+        private void TiltAngle()
+        {
+            _ctrPoint.X = -_linEcc * Math.Cos(_tiltAngle);
+            _ctrPoint.Y = _linEcc * Math.Sin(_tiltAngle);
+            StartAngle();
+        }
+        
         private void StartAngle()
         {
             var r = RadiusFromFocal(_semiMajor, _eccentricy, _tiltAngle, _startAngle);
             _startPos.X = r * Math.Cos(-_startAngle);
             _startPos.Y = r * Math.Sin(-_startAngle);
-            _angleLines[0] = new SDL.SDL_Point()
+            _angleLinesFcl[0] = new SDL.SDL_Point()
             {
                 x = (int)_startPos.X,
                 y = (int)_startPos.Y
             };
+            
+            _angleLinesCtr[0] = _angleLinesFcl[0];
+
+            _angleLinesCtr[1] = new SDL.SDL_Point()
+            {
+                x = (int)_ctrPoint.X,
+                y = (int)_ctrPoint.Y,
+            };
+                
             SweepAngle();
         }
 
@@ -350,11 +377,17 @@ public class Program
                     
             _endPos.X = r * Math.Cos(-endAng);
             _endPos.Y = r * Math.Sin(-endAng);
-            _angleLines[2] = new SDL.SDL_Point()
+            _angleLinesFcl[2] = new SDL.SDL_Point()
             {
                 x = (int)_endPos.X,
                 y = (int)_endPos.Y
             };
+            _angleLinesCtr[2] = _angleLinesFcl[0];
+        }
+
+        private void CtrPnt()
+        {
+            
         }
 
         public void CallFunction(int func)
@@ -365,7 +398,7 @@ public class Program
                 {
                     case 0:
                     {
-                        _points = EllipseFormula.EllipseArrayFromPaper(_semiMajor, _semiMinor, _tiltAngle, 64);
+                        _points = EllipseFormula.EllipseArrayFromPaper(_semiMajor, _semiMinor, -_tiltAngle, 64);
                     }
                         break;
                     case 1:
@@ -439,14 +472,34 @@ public class Program
             alph = 25;
             SDL.SDL_SetRenderDrawColor(rendererPtr, red, grn, blu, alph);
             var point0 = new SDL.SDL_Point(){
-                x = _angleLines[0].x + cx, 
-                y = _angleLines[0].y + cy
+                x = _angleLinesFcl[0].x + cx, 
+                y = _angleLinesFcl[0].y + cy
             };
-            for (int i = 1; i < _angleLines.Length; i++)
+            for (int i = 1; i < _angleLinesFcl.Length; i++)
             {
                 var point1 = new SDL.SDL_Point(){
-                    x = _angleLines[i].x + cx, 
-                    y = _angleLines[i].y + cy
+                    x = _angleLinesFcl[i].x + cx, 
+                    y = _angleLinesFcl[i].y + cy
+                };
+                SDL.SDL_RenderDrawLine(rendererPtr, point0.x, point0.y, point1.x, point1.y);
+                point0 = point1;
+            }
+            
+            
+            red = 50;
+            grn = 50;
+            blu = 0;
+            alph = 25;
+            SDL.SDL_SetRenderDrawColor(rendererPtr, red, grn, blu, alph);
+            point0 = new SDL.SDL_Point(){
+                x = _angleLinesCtr[0].x + cx, 
+                y = _angleLinesCtr[0].y + cy
+            };
+            for (int i = 1; i < _angleLinesCtr.Length; i++)
+            {
+                var point1 = new SDL.SDL_Point(){
+                    x = _angleLinesCtr[i].x + cx, 
+                    y = _angleLinesCtr[i].y + cy
                 };
                 SDL.SDL_RenderDrawLine(rendererPtr, point0.x, point0.y, point1.x, point1.y);
                 point0 = point1;
@@ -476,4 +529,11 @@ public class Program
         double quotent = dividend / divisor;
         return quotent;
     }
+
+
+    public static double RadiusFromCenter(double b, double e,double phi, double theta)
+    {
+        return b / Math.Sqrt(1 - (e * Math.Cos(theta - phi)));
+    }
+    
 }

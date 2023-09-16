@@ -52,9 +52,9 @@ public class EllipseFormula
     /// <param name="tilt"></param>
     /// <param name="numPoints"></param>
     /// <returns></returns>
-    public static DVec.Vector2[] EllipseArrayFromPaper(double semiMaj, double semiMin, double tilt, int numPoints)
+    public static Vector2[] EllipseArrayFromPaper(double semiMaj, double semiMin, double tilt, int numPoints)
     {
-        DVec.Vector2[] points = new DVec.Vector2[numPoints];
+        Vector2[] points = new Vector2[numPoints];
 
         var n = numPoints;
         var a = semiMaj;
