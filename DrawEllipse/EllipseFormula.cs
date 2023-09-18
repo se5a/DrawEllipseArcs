@@ -59,8 +59,9 @@ public class EllipseFormula
         var n = numPoints;
         var a = semiMaj;
         var b = semiMin;
-        var xc = 0; //this is the center position of the ellipse;
-        var yc = 0;
+        var c = Math.Sqrt((a * a) - (b * b));
+        var xc = c * Math.Cos(tilt); //this is the center position of the ellipse;
+        var yc = c * Math.Sin(tilt);
         
         var deltaPhi = 2 * Math.PI / (n - 1);
         var ct = Math.Cos(tilt);

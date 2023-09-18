@@ -296,13 +296,13 @@ public class Program
 
                 if (ImGui.SliderAngle("Tilt", ref _tiltAngle))
                 {
-                    TiltAngle();
+                    OnChange();
                 }
                 
                 if(ImGui.SliderFloat("Eccentricity", ref _eccentricy, 0, 2))
                 {
                     _semiMinor = _semiMajor * Math.Sqrt(1 - _eccentricy * _eccentricy);
-                    _linEcc = Math.Sqrt(_semiMajor * _semiMajor - _semiMinor * _semiMinor);
+                    _linEcc = Math.Sqrt((_semiMajor * _semiMajor) - (_semiMinor * _semiMinor));
                     _angleLinesFcl[1] = new SDL.SDL_Point()
                     {
                         //x = (int)(-linEcc * Math.Cos(-_tiltAngle)),
@@ -310,17 +310,17 @@ public class Program
                         x = 0,
                         y = 0
                     };
-                    TiltAngle();
+                    OnChange();
                 }
 
                 if (ImGui.SliderAngle("StartAngle", ref _startAngle, -360, 360))
                 {
-                    StartAngle();
+                    OnChange();
                 }
 
                 if (ImGui.SliderAngle("Sweep", ref _sweepAngle, -360, 360))
                 {
-                    SweepAngle();
+                    OnChange();
                 }
                 if (ImGui.Button("Profile 100000x"))
                 {
@@ -341,11 +341,22 @@ public class Program
             }
         }
 
+        void OnChange()
+        {
+            TiltAngle();
+            StartAngle();
+            SweepAngle();
+        }
+
         private void TiltAngle()
         {
-            _ctrPoint.X = -_linEcc * Math.Cos(_tiltAngle);
+            _ctrPoint.X = _linEcc * Math.Cos(_tiltAngle);
             _ctrPoint.Y = _linEcc * Math.Sin(_tiltAngle);
-            StartAngle();
+            _angleLinesCtr[1] = new SDL.SDL_Point()
+            {
+                x = (int)_ctrPoint.X,
+                y = (int)_ctrPoint.Y,
+            };            
         }
         
         private void StartAngle()
@@ -361,13 +372,7 @@ public class Program
             
             _angleLinesCtr[0] = _angleLinesFcl[0];
 
-            _angleLinesCtr[1] = new SDL.SDL_Point()
-            {
-                x = (int)_ctrPoint.X,
-                y = (int)_ctrPoint.Y,
-            };
-                
-            SweepAngle();
+
         }
 
         private void SweepAngle()
@@ -375,14 +380,14 @@ public class Program
             double endAng = _startAngle + _sweepAngle;
             var r = RadiusFromFocal(_semiMajor, _eccentricy, _tiltAngle, endAng);
                     
-            _endPos.X = r * Math.Cos(-endAng);
-            _endPos.Y = r * Math.Sin(-endAng);
+            _endPos.X = r * Math.Cos(endAng);
+            _endPos.Y = r * Math.Sin(endAng);
             _angleLinesFcl[2] = new SDL.SDL_Point()
             {
                 x = (int)_endPos.X,
                 y = (int)_endPos.Y
             };
-            _angleLinesCtr[2] = _angleLinesFcl[0];
+            _angleLinesCtr[2] = _angleLinesFcl[2];
         }
 
         private void CtrPnt()
@@ -398,7 +403,7 @@ public class Program
                 {
                     case 0:
                     {
-                        _points = EllipseFormula.EllipseArrayFromPaper(_semiMajor, _semiMinor, -_tiltAngle, 64);
+                        _points = EllipseFormula.EllipseArrayFromPaper(_semiMajor, _semiMinor, _tiltAngle, 64);
                     }
                         break;
                     case 1:
@@ -516,10 +521,11 @@ public class Program
     
     /// <summary>
     /// https://en.wikipedia.org/wiki/Ellipse#Polar_form_relative_to_focus
+    /// This is a True Anomaly
     /// </summary>
     /// <param name="a">semi major</param>
     /// <param name="e">eccentricy</param>
-    /// <param name="phi">angle from focal 1 to focal 2 (or center)</param>
+    /// <param name="phi">tilt, angle from focal 1 to focal 2 (or center)</param>
     /// <param name="theta">angle</param>
     /// <returns></returns>
     public static double RadiusFromFocal(double a, double e, double phi, double theta)
