@@ -248,11 +248,20 @@ public class Program
         }
 
         private float _tiltAngle = 0;
+        private float GetTilt {get {return _tiltAngle * -1;}}
         private float _eccentricy = 0.15f;
         private double _semiMajor = 200;
         private double _semiMinor = 200 * Math.Sqrt(1 - 0.15f * 0.15f);
         private float _startAngle = 0;
+        private float GetStartAngle
+        {
+            get { return _startAngle * -1; }
+        }
         private float _sweepAngle = 1.57079632679f;
+        private float GetSweepAngle
+        {
+            get { return _sweepAngle * -1; }
+        }
         private Vector2 _startPos = new Vector2();
         private Vector2 _endPos = new Vector2();
         private Vector2 _focalPoint = new Vector2(0, 0);
@@ -278,7 +287,7 @@ public class Program
             "Cheats Circle AntiCockwise",
             "AnglesFromFocal",
             "Using Positions",
-            "ArcTrig"
+            "ArcRadiusFromFocal"
         };
 
         private string _errorMsg = "";
@@ -291,10 +300,10 @@ public class Program
             {
                 if (ImGui.Combo("Function:", ref _selectFuncIndex, _funcNames, _funcNames.Length))
                 {
-                    
+                    OnChange();
                 }
 
-                if (ImGui.SliderAngle("Tilt", ref _tiltAngle))
+                if (ImGui.SliderAngle("Tilt (LoP)", ref _tiltAngle))
                 {
                     OnChange();
                 }
@@ -350,8 +359,8 @@ public class Program
 
         private void TiltAngle()
         {
-            _ctrPoint.X = _linEcc * Math.Cos(_tiltAngle);
-            _ctrPoint.Y = _linEcc * Math.Sin(_tiltAngle);
+            _ctrPoint.X = -_linEcc * Math.Cos(GetTilt);
+            _ctrPoint.Y = -_linEcc * Math.Sin(GetTilt);
             _angleLinesCtr[1] = new SDL.SDL_Point()
             {
                 x = (int)_ctrPoint.X,
@@ -361,9 +370,9 @@ public class Program
         
         private void StartAngle()
         {
-            var r = RadiusFromFocal(_semiMajor, _eccentricy, _tiltAngle, _startAngle);
-            _startPos.X = r * Math.Cos(-_startAngle);
-            _startPos.Y = r * Math.Sin(-_startAngle);
+            var r = EllipseFormula.RadiusFromFocal(_semiMajor, _eccentricy, GetTilt, GetStartAngle);
+            _startPos.X = r * Math.Cos(GetStartAngle);
+            _startPos.Y = r * Math.Sin(GetStartAngle);
             _angleLinesFcl[0] = new SDL.SDL_Point()
             {
                 x = (int)_startPos.X,
@@ -377,8 +386,8 @@ public class Program
 
         private void SweepAngle()
         {
-            double endAng = _startAngle + _sweepAngle;
-            var r = RadiusFromFocal(_semiMajor, _eccentricy, _tiltAngle, endAng);
+            double endAng = GetStartAngle + GetSweepAngle;
+            var r = EllipseFormula.RadiusFromFocal(_semiMajor, _eccentricy, GetTilt, endAng);
                     
             _endPos.X = r * Math.Cos(endAng);
             _endPos.Y = r * Math.Sin(endAng);
@@ -403,46 +412,46 @@ public class Program
                 {
                     case 0:
                     {
-                        _points = EllipseFormula.EllipseArrayFromPaper(_semiMajor, _semiMinor, _tiltAngle, 64);
+                        _points = EllipseFormula.EllipseArrayFromPaper(_semiMajor, _semiMinor, GetTilt, 64);
                     }
                         break;
                     case 1:
                     {
-                        _points = EllipseFormula.EllipseFullMtxSweep(_semiMajor, _eccentricy, _tiltAngle, _startAngle,
-                            _sweepAngle, 64);
+                        _points = EllipseFormula.EllipseFullMtxSweep(_semiMajor, _eccentricy, GetTilt, GetStartAngle,
+                            GetSweepAngle, 64);
                     }
                         break;
                     case 2:
                     {
-                        _points = EllipseFormula.EllipseFullMtxSweepAntiCockwise(_semiMajor, _eccentricy, _tiltAngle,
-                            _startAngle, _sweepAngle, 64);
+                        _points = EllipseFormula.EllipseFullMtxSweepAntiCockwise(_semiMajor, _eccentricy, GetTilt,
+                            GetStartAngle, GetSweepAngle, 64);
                     }
                         break;
                     case 3:
                     {
-                        _points = EllipseFormula.CheatsCircle(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _sweepAngle, 64);
+                        _points = EllipseFormula.CheatsCircle(_semiMajor, _eccentricy, GetTilt, GetStartAngle, GetSweepAngle, 64);
                     }
                         break;
                     case 4:
                     {
-                        _points = EllipseFormula.CheatsCircleAntiClockwise(_semiMajor, _eccentricy, _tiltAngle, _startAngle,
-                            _sweepAngle, 64);
+                        _points = EllipseFormula.CheatsCircleAntiClockwise(_semiMajor, _eccentricy, GetTilt, GetStartAngle,
+                            GetSweepAngle, 64);
                     }
                         break;
                     case 5:
                     {
-                        _points = EllipseFormula.ArcWithFocalAngle(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _sweepAngle,
+                        _points = EllipseFormula.ArcWithFocalAngle(_semiMajor, _eccentricy, GetTilt, GetStartAngle, GetSweepAngle,
                             64);
                     }
                         break;
                     case 6:
                     {
-                        _points = EllipseFormula.ArcWithFocalAngle(_semiMajor, _eccentricy, _tiltAngle, _startPos, _endPos, 64);
+                        _points = EllipseFormula.ArcWithFocalAngle(_semiMajor, _eccentricy, GetTilt, _startPos, _endPos, 64);
                     }
                         break;
                     case 7:
                     {
-                        _points = EllipseFormula.ArcTrig(_semiMajor, _eccentricy, _tiltAngle, _startAngle, _sweepAngle, 64);
+                        _points = EllipseFormula.ArcRadiusFromFocal(_semiMajor, _eccentricy, GetTilt, GetStartAngle, GetSweepAngle, 64);
                     }
                         break;
                 }
@@ -519,27 +528,6 @@ public class Program
         Middle
     }
     
-    /// <summary>
-    /// https://en.wikipedia.org/wiki/Ellipse#Polar_form_relative_to_focus
-    /// This is a True Anomaly
-    /// </summary>
-    /// <param name="a">semi major</param>
-    /// <param name="e">eccentricy</param>
-    /// <param name="phi">tilt, angle from focal 1 to focal 2 (or center)</param>
-    /// <param name="theta">angle</param>
-    /// <returns></returns>
-    public static double RadiusFromFocal(double a, double e, double phi, double theta)
-    {
-        double dividend = a * (1 - e * e);
-        double divisor = 1 - e * Math.Cos(theta - phi);
-        double quotent = dividend / divisor;
-        return quotent;
-    }
 
-
-    public static double RadiusFromCenter(double b, double e,double phi, double theta)
-    {
-        return b / Math.Sqrt(1 - (e * Math.Cos(theta - phi)));
-    }
     
 }

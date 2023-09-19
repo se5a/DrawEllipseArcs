@@ -60,8 +60,8 @@ public class EllipseFormula
         var a = semiMaj;
         var b = semiMin;
         var c = Math.Sqrt((a * a) - (b * b));
-        var xc = c * Math.Cos(tilt); //this is the center position of the ellipse;
-        var yc = c * Math.Sin(tilt);
+        var xc = -c * Math.Cos(tilt); //this is the center position of the ellipse;
+        var yc = -c * Math.Sin(tilt);
         
         var deltaPhi = 2 * Math.PI / (n - 1);
         var ct = Math.Cos(tilt);
@@ -303,7 +303,7 @@ public class EllipseFormula
         double end = start + sweep;
         double Δθ = 2 * Math.PI / (numPoints - 1) * Math.Sign(sweep); //arc increment for a whole circle
         numPoints = (int)Math.Abs(sweep / Δθ); //numpoints for just the arc
-        DVec.Vector2[] points = new DVec.Vector2[numPoints + 1];
+        Vector2[] points = new Vector2[numPoints + 1];
         
         double linEcc = Math.Sqrt(semiMaj * semiMaj - b * b);
         double θ = 0;
@@ -315,16 +315,16 @@ public class EllipseFormula
             θ = start + Δθ * i;
             x = semiMaj * Math.Cos(θ);
             y = semiMaj * Math.Sin(θ);
-            points[i] = new DVec.Vector2(x, y);
+            points[i] = new Vector2(x, y);
         }
         x = semiMaj * Math.Cos(end);
         y = semiMaj * Math.Sin(end);
-        points[numPoints] = new DVec.Vector2(x, y);
+        points[numPoints] = new Vector2(x, y);
 
         Matrix mirMtx = Matrix.IDMirror(true, false);
-        Matrix scalemtx = Matrix.IDScale(1,  1 - eccentricity);
+        Matrix scalemtx = Matrix.IDScale(1,  b/semiMaj);
         Matrix moveMtx = Matrix.IDTranslate(-linEcc, 0);
-        Matrix rotMtx = Matrix.IDRotate(tilt);
+        Matrix rotMtx = Matrix.IDRotate(-tilt);
         Matrix endMtx = moveMtx * scalemtx * rotMtx;
         points = endMtx.Transform(points);
         
@@ -347,8 +347,13 @@ public class EllipseFormula
         
         //convert ellipse angles to circle angles. 
         double b = semiMaj * Math.Sqrt(1 - eccentricity * eccentricity);
+        
+        
         //start = Math.Atan2(b * Math.Cos(start), semiMaj * Math.Sin(start));
         //sweep = Math.Atan2(b * Math.Cos(sweep), semiMaj * Math.Sin(sweep));
+
+        
+        
         double end = start + sweep;
         double Δθ = 2 * Math.PI / (numPoints - 1) * Math.Sign(sweep); //arc increment for a whole circle
         numPoints = (int)Math.Abs(sweep / Δθ); //numpoints for just the arc
@@ -389,7 +394,7 @@ public class EllipseFormula
     /// <param name="sweep"></param>
     /// <param name="numPoints"></param>
     /// <returns></returns>
-    public static DVec.Vector2[] CheatsCircle(double semiMaj, double eccentricity, double tilt, double start,
+    public static Vector2[] CheatsCircle(double semiMaj, double eccentricity, double tilt, double start,
         double sweep, int numPoints)
     {
         
@@ -400,7 +405,7 @@ public class EllipseFormula
         double end = start + sweep;
         double Δθ = 2 * Math.PI / (numPoints - 1) * Math.Sign(sweep); //arc increment for a whole circle
         numPoints = (int)Math.Abs(sweep / Δθ); //numpoints for just the arc
-        DVec.Vector2[] points = new DVec.Vector2[numPoints + 1];
+        Vector2[] points = new Vector2[numPoints + 1];
         
         double linEcc = Math.Sqrt(semiMaj * semiMaj - b * b);
         double θ = 0;
@@ -411,11 +416,11 @@ public class EllipseFormula
         {
             x -= Δθ * y;
             y += Δθ * x;
-            points[i] = new DVec.Vector2(x, y);
+            points[i] = new Vector2(x, y);
         }
         x = semiMaj * Math.Cos(end);
         y = semiMaj * Math.Sin(end);
-        points[numPoints] = new DVec.Vector2(x, y);
+        points[numPoints] = new Vector2(x, y);
         
         Matrix scalemtx = Matrix.IDScale(1,  1 - eccentricity);
         Matrix moveMtx = Matrix.IDTranslate(-linEcc, 0);
@@ -469,20 +474,20 @@ public class EllipseFormula
         double θ = 0;
         double x = 0;
         double y = 0;
-        //convert ellipse angles to circle angles. 
+        
         double b = semiMaj * Math.Sqrt(1 - eccentricity * eccentricity);
         double linEcc = Math.Sqrt(semiMaj * semiMaj - b * b);
         
         //convert focal angle to center angle
-        x = linEcc * Math.Cos(-start);
-        y = linEcc * Math.Sin(-start);
+        x = linEcc * Math.Cos(start);
+        y = linEcc * Math.Sin(start);
         //shift y from ellipse to circle:
         y = y * -(1 - eccentricity);
         start = Math.Atan2(y, x);
         
         //convert focal angle to center angle
-        x = linEcc * Math.Cos(-sweep);
-        y = linEcc * Math.Sin(-sweep);
+        x = linEcc * Math.Cos(sweep);
+        y = linEcc * Math.Sin(sweep);
         //shift y from ellipse to circle:
         y = y * -(1 - eccentricity);
         sweep = Math.Atan2(y, x);
@@ -567,7 +572,7 @@ public class EllipseFormula
 
 
     /// <summary>
-    /// Positions done using normal trig. 
+    /// Positions done using radius from focal. 
     /// </summary>
     /// <param name="semiMaj"></param>
     /// <param name="eccentricity"></param>
@@ -576,7 +581,7 @@ public class EllipseFormula
     /// <param name="sweep"></param>
     /// <param name="numPoints"></param>
     /// <returns></returns>
-    public static Vector2[] ArcTrig(double semiMaj, double eccentricity, double tilt, double start, double sweep,
+    public static Vector2[] ArcRadiusFromFocal(double semiMaj, double eccentricity, double tilt, double start, double sweep,
         int numPoints)
     {                    
         var _semiMinor = semiMaj * Math.Sqrt(1 - eccentricity * eccentricity);
@@ -585,29 +590,54 @@ public class EllipseFormula
         double θ = 0;
         double x = 0;
         double y = 0;
-        
+        double r = RadiusFromFocal(semiMaj, eccentricity, tilt, start);
         double Δθ = 2 * Math.PI / (numPoints - 1) * Math.Sign(sweep); 
         numPoints = (int)Math.Abs(sweep / Δθ) + 1; //numpoints for just the arc
         
         Vector2[] points = new Vector2[numPoints + 1];
         for (int i = 0; i < numPoints; i++)
         {
-            θ = -start - Δθ * i;
-            x = semiMaj * Math.Cos(θ);
-            y = semiMaj * Math.Sin(θ);
+            θ = start + Δθ * i;
+            r = RadiusFromFocal(semiMaj, eccentricity, tilt, θ);
+            x = r * Math.Cos(θ);
+            y = r * Math.Sin(θ);
             points[i] = new Vector2(x, y);
         }
         //lastPoint:
-        θ = -start - sweep;
+        θ = start + sweep;
+        r = RadiusFromFocal(semiMaj, eccentricity, tilt, θ);
         points[^1] = new Vector2()
         {
-            X = semiMaj * Math.Cos(θ),
-            Y = semiMaj * Math.Sin(θ)
+            X = r * Math.Cos(θ),
+            Y = r * Math.Sin(θ)
         };
 
         return points;
 
 
 
+    }
+    
+    /// <summary>
+    /// https://en.wikipedia.org/wiki/Ellipse#Polar_form_relative_to_focus
+    /// This is a True Anomaly
+    /// </summary>
+    /// <param name="a">semi major</param>
+    /// <param name="e">eccentricy</param>
+    /// <param name="phi">tilt, angle from focal 1 to focal 2 (or center)</param>
+    /// <param name="theta">angle</param>
+    /// <returns></returns>
+    public static double RadiusFromFocal(double a, double e, double phi, double theta)
+    {
+        double dividend = a * (1 - e * e);
+        double divisor = 1 + e * Math.Cos(theta - phi);
+        double quotent = dividend / divisor;
+        return quotent;
+    }
+
+
+    public static double RadiusFromCenter(double b, double e,double phi, double theta)
+    {
+        return b / Math.Sqrt(1 - (e * Math.Cos(theta - phi)));
     }
 }
