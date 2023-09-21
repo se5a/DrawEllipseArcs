@@ -253,15 +253,9 @@ public class Program
         private double _semiMajor = 200;
         private double _semiMinor = 200 * Math.Sqrt(1 - 0.15f * 0.15f);
         private float _startAngle = 0;
-        private float GetStartAngle
-        {
-            get { return _startAngle * -1; }
-        }
+
         private float _sweepAngle = 1.57079632679f;
-        private float GetSweepAngle
-        {
-            get { return _sweepAngle * -1; }
-        }
+
         private Vector2 _startPos = new Vector2();
         private Vector2 _endPos = new Vector2();
         private Vector2 _focalPoint = new Vector2(0, 0);
@@ -287,7 +281,8 @@ public class Program
             "Cheats Circle AntiCockwise",
             "AnglesFromFocal",
             "Using Positions",
-            "ArcRadiusFromFocal"
+            "ArcRadiusFromFocal",
+            "ArcRadiusFromFocal2"
         };
 
         private string _errorMsg = "";
@@ -327,10 +322,19 @@ public class Program
                     OnChange();
                 }
 
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip(_startAngle.ToString("0.####"));
+                }
+                ImGui.SameLine();
+                ImGui.Text(_startPos.X.ToString("0.##") + "," + _startPos.Y.ToString("0.##"));
+
                 if (ImGui.SliderAngle("Sweep", ref _sweepAngle, -360, 360))
                 {
                     OnChange();
                 }
+                ImGui.SameLine();
+                ImGui.Text(_endPos.X.ToString("0.##") + "," + _endPos.Y.ToString("0.##"));
                 if (ImGui.Button("Profile 100000x"))
                 {
                     
@@ -370,9 +374,11 @@ public class Program
         
         private void StartAngle()
         {
-            var r = EllipseFormula.RadiusFromFocal(_semiMajor, _eccentricy, GetTilt, GetStartAngle);
-            _startPos.X = r * Math.Cos(GetStartAngle);
-            _startPos.Y = r * Math.Sin(GetStartAngle);
+            var r = EllipseFormula.RadiusFromFocal(_semiMajor, _eccentricy, GetTilt, _startAngle);
+            var foo = Math.Sin(_startAngle);
+            _startPos.X = r * Math.Cos(_startAngle);
+            _startPos.Y = r * Math.Sin(_startAngle);
+            var ang = Math.Atan2(_startPos.Y, _startPos.X);
             _angleLinesFcl[0] = new SDL.SDL_Point()
             {
                 x = (int)_startPos.X,
@@ -386,7 +392,7 @@ public class Program
 
         private void SweepAngle()
         {
-            double endAng = GetStartAngle + GetSweepAngle;
+            double endAng = _startAngle + _sweepAngle;
             var r = EllipseFormula.RadiusFromFocal(_semiMajor, _eccentricy, GetTilt, endAng);
                     
             _endPos.X = r * Math.Cos(endAng);
@@ -417,30 +423,30 @@ public class Program
                         break;
                     case 1:
                     {
-                        _points = EllipseFormula.EllipseFullMtxSweep(_semiMajor, _eccentricy, GetTilt, GetStartAngle,
-                            GetSweepAngle, 64);
+                        _points = EllipseFormula.EllipseFullMtxSweep(_semiMajor, _eccentricy, GetTilt, _startAngle,
+                            _sweepAngle, 64);
                     }
                         break;
                     case 2:
                     {
-                        _points = EllipseFormula.EllipseFullMtxSweepAntiCockwise(_semiMajor, _eccentricy, GetTilt,
-                            GetStartAngle, GetSweepAngle, 64);
+                        //_points = EllipseFormula.EllipseFullMtxSweepAntiCockwise(_semiMajor, _eccentricy, GetTilt,
+                            //_startAngle, _sweepAngle, 64);
                     }
                         break;
                     case 3:
                     {
-                        _points = EllipseFormula.CheatsCircle(_semiMajor, _eccentricy, GetTilt, GetStartAngle, GetSweepAngle, 64);
+                        _points = EllipseFormula.CheatsCircle(_semiMajor, _eccentricy, GetTilt, _startAngle, _sweepAngle, 64);
                     }
                         break;
                     case 4:
                     {
-                        _points = EllipseFormula.CheatsCircleAntiClockwise(_semiMajor, _eccentricy, GetTilt, GetStartAngle,
-                            GetSweepAngle, 64);
+                        //_points = EllipseFormula.CheatsCircleAntiClockwise(_semiMajor, _eccentricy, GetTilt, _startAngle,
+                            //_sweepAngle, 64);
                     }
                         break;
                     case 5:
                     {
-                        _points = EllipseFormula.ArcWithFocalAngle(_semiMajor, _eccentricy, GetTilt, GetStartAngle, GetSweepAngle,
+                        _points = EllipseFormula.ArcWithFocalAngle(_semiMajor, _eccentricy, GetTilt, _startAngle, _sweepAngle,
                             64);
                     }
                         break;
@@ -451,7 +457,12 @@ public class Program
                         break;
                     case 7:
                     {
-                        _points = EllipseFormula.ArcRadiusFromFocal(_semiMajor, _eccentricy, GetTilt, GetStartAngle, GetSweepAngle, 64);
+                        _points = EllipseFormula.ArcRadiusFromFocal(_semiMajor, _eccentricy, GetTilt, _startAngle, _sweepAngle, 64);
+                    }
+                        break;
+                    case 8:
+                    {
+                        _points = EllipseFormula.ArcRadiusFromFocal(_semiMajor, _eccentricy, GetTilt, _startPos, _endPos, 64);
                     }
                         break;
                 }
@@ -476,7 +487,7 @@ public class Program
             var cy = (int) _state.MainWinSize.Y / 2;
             foreach (var tpl in _points)
             {
-                SDL.SDL_RenderDrawPoint(rendererPtr, (int)(cx + tpl.X), (int)(cy + tpl.Y));
+                SDL.SDL_RenderDrawPoint(rendererPtr, (int)(cx + tpl.X), (int)(cy - tpl.Y));
             }
             
             
@@ -487,13 +498,13 @@ public class Program
             SDL.SDL_SetRenderDrawColor(rendererPtr, red, grn, blu, alph);
             var point0 = new SDL.SDL_Point(){
                 x = _angleLinesFcl[0].x + cx, 
-                y = _angleLinesFcl[0].y + cy
+                y = -_angleLinesFcl[0].y + cy
             };
             for (int i = 1; i < _angleLinesFcl.Length; i++)
             {
                 var point1 = new SDL.SDL_Point(){
                     x = _angleLinesFcl[i].x + cx, 
-                    y = _angleLinesFcl[i].y + cy
+                    y = -_angleLinesFcl[i].y + cy
                 };
                 SDL.SDL_RenderDrawLine(rendererPtr, point0.x, point0.y, point1.x, point1.y);
                 point0 = point1;
@@ -507,13 +518,13 @@ public class Program
             SDL.SDL_SetRenderDrawColor(rendererPtr, red, grn, blu, alph);
             point0 = new SDL.SDL_Point(){
                 x = _angleLinesCtr[0].x + cx, 
-                y = _angleLinesCtr[0].y + cy
+                y = -_angleLinesCtr[0].y + cy
             };
             for (int i = 1; i < _angleLinesCtr.Length; i++)
             {
                 var point1 = new SDL.SDL_Point(){
                     x = _angleLinesCtr[i].x + cx, 
-                    y = _angleLinesCtr[i].y + cy
+                    y = -_angleLinesCtr[i].y + cy
                 };
                 SDL.SDL_RenderDrawLine(rendererPtr, point0.x, point0.y, point1.x, point1.y);
                 point0 = point1;
