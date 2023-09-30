@@ -574,11 +574,55 @@ public class EllipseFormula
             points[i] = new Vector2(x, y);
         }
         //lastPoint:
-        θ = endAng;
-        r = RadiusFromFocal(semiMaj, eccentricity, tilt, θ);
         points[^1] = endPnt;
 
         return points;
+    }
+    
+
+    /// <summary>
+    /// this one uses a reference of points which it populates. should be faster.
+    /// otherwise is same as ArcRadiusFromFocal
+    /// </summary>
+    /// <param name="semiMaj"></param>
+    /// <param name="eccentricity"></param>
+    /// <param name="tilt"></param>
+    /// <param name="startPnt"></param>
+    /// <param name="endPnt"></param>
+    /// <param name="points"></param>
+    public static void ArcRadiusFromFocalRefPoints(double semiMaj, double eccentricity, double tilt,  Vector2 startPnt, Vector2 endPnt, ref Vector2[] points)
+    {                    
+            
+        double startAng = Math.Atan2(startPnt.Y, startPnt.X);
+        double endAng =  Math.Atan2(endPnt.Y, endPnt.X);
+        double sweep = Angle.NormaliseRadiansPositive( endAng - startAng);
+        
+        var numPoints = points.Length;
+        double θ = 0;
+        double x = 0;
+        double y = 0;
+        double r = RadiusFromFocal(semiMaj, eccentricity, tilt, startAng);
+        //this is the amount of sweep per point, for a full circle/ellipse. 
+        double Δθ = sweep / numPoints;
+        if (Δθ == 0)
+        {
+            for (int i = 0; i < numPoints; i++)
+            {
+                points[i] = startPnt;
+            }
+            return;
+        }
+
+        for (int i = 0; i < numPoints; i++)
+        {
+            θ = startAng + Δθ * i;
+            r = RadiusFromFocal(semiMaj, eccentricity, tilt, θ);
+            x = r * Math.Cos(θ);
+            y = r * Math.Sin(θ);
+            points[i] = new Vector2(x, y);
+        }
+        //lastPoint:
+        points[^1] = endPnt;
     }
     
     /// <summary>

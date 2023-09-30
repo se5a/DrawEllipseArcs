@@ -276,13 +276,10 @@ public class Program
         {
             "From Paper", 
             "Using Matrix",
-            "Matrix AntiClockwise",
             "Cheats Circle",
-            "Cheats Circle AntiCockwise",
-            "AnglesFromFocal",
-            "Using Positions",
-            "ArcRadiusFromFocal",
-            "ArcRadiusFromFocal2"
+            "ArcRadiusFromFocal using angles",
+            "ArcRadiusFromFocal using positons",
+            "ArcRadiusFromFocal using ref points"
         };
 
         private string _errorMsg = "";
@@ -351,6 +348,7 @@ public class Program
                 CallFunction(_selectFuncIndex);
                 
                 ImGui.Text(_errorMsg);
+
             }
         }
 
@@ -419,50 +417,34 @@ public class Program
                     case 0:
                     {
                         _points = EllipseFormula.EllipseArrayFromPaper(_semiMajor, _semiMinor, GetTilt, 64);
-                    }
                         break;
+                    }
                     case 1:
                     {
                         _points = EllipseFormula.EllipseFullMtxSweep(_semiMajor, _eccentricy, GetTilt, _startAngle,
                             _sweepAngle, 64);
-                    }
                         break;
+                    }
                     case 2:
                     {
-                        //_points = EllipseFormula.EllipseFullMtxSweepAntiCockwise(_semiMajor, _eccentricy, GetTilt,
-                            //_startAngle, _sweepAngle, 64);
-                    }
-                        break;
-                    case 3:
-                    {
                         _points = EllipseFormula.CheatsCircle(_semiMajor, _eccentricy, GetTilt, _startAngle, _sweepAngle, 64);
-                    }
                         break;
-                    case 4:
-                    {
-                        //_points = EllipseFormula.CheatsCircleAntiClockwise(_semiMajor, _eccentricy, GetTilt, _startAngle,
-                            //_sweepAngle, 64);
                     }
-                        break;
-                    case 5:
-                    {
-                        _points = EllipseFormula.ArcWithFocalAngle(_semiMajor, _eccentricy, GetTilt, _startAngle, _sweepAngle,
-                            64);
-                    }
-                        break;
-                    case 6:
-                    {
-                        _points = EllipseFormula.ArcWithFocalAngle(_semiMajor, _eccentricy, GetTilt, _startPos, _endPos, 64);
-                    }
-                        break;
-                    case 7:
+                    case 3:
                     {
                         _points = EllipseFormula.ArcRadiusFromFocal(_semiMajor, _eccentricy, GetTilt, _startAngle, _sweepAngle, 64);
                     }
                         break;
-                    case 8:
+                    case 4:
                     {
                         _points = EllipseFormula.ArcRadiusFromFocal(_semiMajor, _eccentricy, GetTilt, _startPos, _endPos, 64);
+                    }
+                        break;
+                    case 5:
+                    {
+                        if (_points.Length != _numPoints)
+                            _points = new Vector2[_numPoints];
+                        EllipseFormula.ArcRadiusFromFocalRefPoints(_semiMajor, _eccentricy, GetTilt, _startPos, _endPos, ref _points);
                     }
                         break;
                 }
