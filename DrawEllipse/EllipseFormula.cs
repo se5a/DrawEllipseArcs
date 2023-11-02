@@ -625,6 +625,58 @@ public class EllipseFormula
         points[^1] = endPnt;
     }
     
+    
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="semiMaj"></param>
+    /// <param name="eccentricity"></param>
+    /// <param name="loP"></param>
+    /// <param name="startPnt"></param>
+    /// <param name="endPnt"></param>
+    /// <param name="numPoints"></param>
+    /// <returns></returns>
+    public static Vector2[] KeplerPoints(double semiMaj, double eccentricity, double loP, Vector2 startPnt, Vector2 endPnt,
+                                         int numPoints = 128)
+    {                    
+        
+        double startAng = Math.Atan2(startPnt.Y, startPnt.X);
+        double endAng =  Math.Atan2(endPnt.Y, endPnt.X);
+        double sweep = Angle.NormaliseRadiansPositive( endAng - startAng);
+    
+        double θ = 0;
+        double x = 0;
+        double y = 0;
+        double r = RadiusFromFocal(semiMaj, eccentricity, loP, startAng);
+        double Δθ = 2 * Math.PI / (numPoints - 1) * Math.Sign(sweep);
+        if(eccentricity >= 1)
+            Δθ = sweep / (numPoints - 1) * Math.Sign(sweep); 
+        if (Δθ == 0)
+        {
+            return new Vector2[]
+            {
+                startPnt,
+                endPnt
+            };
+        }
+        numPoints = (int)Math.Abs(sweep / Δθ) + 1; //numpoints for just the arc
+    
+        Vector2[] points = new Vector2[numPoints + 1];
+        for (int i = 0; i < numPoints; i++)
+        {
+            θ = startAng + Δθ * i;
+            r = RadiusFromFocal(semiMaj, eccentricity, loP, θ);
+            x = r * Math.Cos(θ);
+            y = r * Math.Sin(θ);
+            points[i] = new Vector2(x, y);
+        }
+        //lastPoint:
+        points[^1] = endPnt;
+
+        return points;
+    }    
+    
+    
     /// <summary>
     /// https://en.wikipedia.org/wiki/Ellipse#Polar_form_relative_to_focus
     /// This is a True Anomaly

@@ -1,6 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Numerics;
 using DrawEllipse;
@@ -255,7 +253,7 @@ public class Program
         private float _startAngle = 0;
 
         private float _sweepAngle = 1.57079632679f;
-
+        private float _endAng = 1.57079632679f;
         private Vector2 _startPos = new Vector2();
         private Vector2 _endPos = new Vector2();
         private Vector2 _focalPoint = new Vector2(0, 0);
@@ -272,6 +270,9 @@ public class Program
 
         private int _selectFuncIndex = 0;
 
+        private double _sr;
+        private double _er;
+        
         private string[] _funcNames = new[]
         {
             "From Paper", 
@@ -279,7 +280,8 @@ public class Program
             "Cheats Circle",
             "ArcRadiusFromFocal using angles",
             "ArcRadiusFromFocal using positons",
-            "ArcRadiusFromFocal using ref points"
+            "ArcRadiusFromFocal using ref points",
+            "keplerPoints "
         };
 
         private string _errorMsg = "";
@@ -302,6 +304,12 @@ public class Program
                 
                 if(ImGui.SliderFloat("Eccentricity", ref _eccentricy, 0, 2))
                 {
+                    if (_eccentricy >= 1)
+                        _semiMajor = -200;
+                    else
+                    {
+                        _semiMajor = 200;
+                    }
                     _semiMinor = _semiMajor * Math.Sqrt(1 - _eccentricy * _eccentricy);
                     _linEcc = Math.Sqrt((_semiMajor * _semiMajor) - (_semiMinor * _semiMinor));
                     _angleLinesFcl[1] = new SDL.SDL_Point()
@@ -328,10 +336,21 @@ public class Program
 
                 if (ImGui.SliderAngle("Sweep", ref _sweepAngle, -360, 360))
                 {
+                    _endAng = _startAngle + _sweepAngle;
                     OnChange();
                 }
+                
+                if (ImGui.SliderAngle("End", ref _endAng, -360, 360))
+                {
+                    _sweepAngle = _endAng - _startAngle;
+                    OnChange();
+                }
+                
                 ImGui.SameLine();
                 ImGui.Text(_endPos.X.ToString("0.##") + "," + _endPos.Y.ToString("0.##"));
+                ImGui.Text("a: " + _semiMajor);
+                ImGui.Text("sr: " + _sr);
+                ImGui.Text("er: " + _er);
                 if (ImGui.Button("Profile 100000x"))
                 {
                     
@@ -372,10 +391,10 @@ public class Program
         
         private void StartAngle()
         {
-            var r = EllipseFormula.RadiusFromFocal(_semiMajor, _eccentricy, GetTilt, _startAngle);
+            _sr = EllipseFormula.RadiusFromFocal(_semiMajor, _eccentricy, GetTilt, _startAngle);
             var foo = Math.Sin(_startAngle);
-            _startPos.X = r * Math.Cos(_startAngle);
-            _startPos.Y = r * Math.Sin(_startAngle);
+            _startPos.X = _sr * Math.Cos(_startAngle);
+            _startPos.Y = _sr * Math.Sin(_startAngle);
             var ang = Math.Atan2(_startPos.Y, _startPos.X);
             _angleLinesFcl[0] = new SDL.SDL_Point()
             {
@@ -390,11 +409,11 @@ public class Program
 
         private void SweepAngle()
         {
-            double endAng = _startAngle + _sweepAngle;
-            var r = EllipseFormula.RadiusFromFocal(_semiMajor, _eccentricy, GetTilt, endAng);
+            
+            _er = EllipseFormula.RadiusFromFocal(_semiMajor, _eccentricy, GetTilt, _endAng);
                     
-            _endPos.X = r * Math.Cos(endAng);
-            _endPos.Y = r * Math.Sin(endAng);
+            _endPos.X = _er * Math.Cos(_endAng);
+            _endPos.Y = _er * Math.Sin(_endAng);
             _angleLinesFcl[2] = new SDL.SDL_Point()
             {
                 x = (int)_endPos.X,
@@ -402,6 +421,7 @@ public class Program
             };
             _angleLinesCtr[2] = _angleLinesFcl[2];
         }
+        
 
         private void CtrPnt()
         {
@@ -416,7 +436,7 @@ public class Program
                 {
                     case 0:
                     {
-                        _points = EllipseFormula.EllipseArrayFromPaper(_semiMajor, _semiMinor, GetTilt, 64);
+                        _points = EllipseFormula.EllipseArrayFromPaper(_semiMajor, _semiMinor, GetTilt, _numPoints);
                         break;
                     }
                     case 1:
@@ -427,17 +447,17 @@ public class Program
                     }
                     case 2:
                     {
-                        _points = EllipseFormula.CheatsCircle(_semiMajor, _eccentricy, GetTilt, _startAngle, _sweepAngle, 64);
+                        _points = EllipseFormula.CheatsCircle(_semiMajor, _eccentricy, GetTilt, _startAngle, _sweepAngle, _numPoints);
                         break;
                     }
                     case 3:
                     {
-                        _points = EllipseFormula.ArcRadiusFromFocal(_semiMajor, _eccentricy, GetTilt, _startAngle, _sweepAngle, 64);
+                        _points = EllipseFormula.ArcRadiusFromFocal(_semiMajor, _eccentricy, GetTilt, _startAngle, _sweepAngle, _numPoints);
                     }
                         break;
                     case 4:
                     {
-                        _points = EllipseFormula.ArcRadiusFromFocal(_semiMajor, _eccentricy, GetTilt, _startPos, _endPos, 64);
+                        _points = EllipseFormula.ArcRadiusFromFocal(_semiMajor, _eccentricy, GetTilt, _startPos, _endPos, _numPoints);
                     }
                         break;
                     case 5:
@@ -445,6 +465,11 @@ public class Program
                         if (_points.Length != _numPoints)
                             _points = new Vector2[_numPoints];
                         EllipseFormula.ArcRadiusFromFocalRefPoints(_semiMajor, _eccentricy, GetTilt, _startPos, _endPos, ref _points);
+                    }
+                        break;
+                    case 6:
+                    {
+                        _points = EllipseFormula.KeplerPoints(_semiMajor, _eccentricy, GetTilt, _startPos, _endPos, _numPoints);
                     }
                         break;
                 }

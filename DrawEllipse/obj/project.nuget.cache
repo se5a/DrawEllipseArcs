@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "7BzG6Olplow0HQ/ODVy1rd870WoEjo/xsfMEG9wRl48UeeR5CtG1R4zBrDxR1tIZx+xmJktfW1tlys+0k6pIWA==",
+  "dgSpecHash": "oEJfuIUShy3+AVm7S20+YJdM+C6OEzqusUoLJwoa+OjqdaKaduwKcDg+DLk5fsIsvsxinSGdSGJWJL5mufTiSw==",
   "success": true,
   "projectFilePath": "/mnt/98448323-4372-4c8a-904a-30b587cc3685/Programing/DrawEllipse/DrawEllipse/DrawEllipse.csproj",
   "expectedPackageFiles": [
@@ -8,9 +8,7 @@
     "/home/se5a/.nuget/packages/system.buffers/4.4.0/system.buffers.4.4.0.nupkg.sha512",
     "/home/se5a/.nuget/packages/system.numerics.vectors/4.4.0/system.numerics.vectors.4.4.0.nupkg.sha512",
     "/home/se5a/.nuget/packages/system.runtime.compilerservices.unsafe/4.4.0/system.runtime.compilerservices.unsafe.4.4.0.nupkg.sha512",
-    "/home/se5a/.nuget/packages/microsoft.netcore.app.ref/6.0.21/microsoft.netcore.app.ref.6.0.21.nupkg.sha512",
-    "/home/se5a/.nuget/packages/microsoft.aspnetcore.app.ref/6.0.21/microsoft.aspnetcore.app.ref.6.0.21.nupkg.sha512",
-    "/home/se5a/.nuget/packages/microsoft.netcore.app.host.linux-x64/6.0.21/microsoft.netcore.app.host.linux-x64.6.0.21.nupkg.sha512"
+    "/home/se5a/.nuget/packages/microsoft.netcore.app.host.linux-x64/6.0.24/microsoft.netcore.app.host.linux-x64.6.0.24.nupkg.sha512"
   ],
   "logs": []
 }
